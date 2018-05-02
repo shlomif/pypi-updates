@@ -8,14 +8,12 @@
     :author: tell-k <ffk2005@gmail.com>
     :copyright: tell-k. All Rights Reserved.
 """
-import os
-
-import kuroko
-import tweepy
 import feedparser
-import pylibmc
+# import pylibmc
+import json
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
+from six import print_
 
 RSS_URL = 'https://pypi.org/rss/updates.xml'
 TWEET_MAX_LENGTH = 130
@@ -33,36 +31,52 @@ def is_valid_message(msg):
     return True
 
 
-class PypiUpdatesBot(kuroko.Bot):
+FILENAME = 'pypi-updates-smoker-cache.bin'
 
-    @property
-    def tweepy_api(self):
-        if hasattr(self, '_tweepy_api'):
-            return self._tweepy_api
-        auth = tweepy.OAuthHandler(
-            os.getenv('TWITTER_CONSUMER_KEY'),
-            os.getenv('TWITTER_CONSUMER_SECRET'),
-        )
-        auth.set_access_token(
-            os.getenv('TWITTER_ACCESS_KEY'),
-            os.getenv('TWITTER_ACCESS_SECRET')
-        )
-        self._tweepy_api = tweepy.API(auth)
-        return self._tweepy_api
+
+class MyCache:
+
+    def get(self, key):
+        try:
+            with open(FILENAME, 'r') as fp:
+                h = json.load(fp)
+                if key not in h:
+                    return None
+                return h[key]
+        except FileNotFoundError:
+            pass
+        return None
+
+    def set(self, key, v):
+        h = {}
+        try:
+            with open(FILENAME, 'r') as fp:
+                h = json.load(fp)
+        except FileNotFoundError:
+            pass
+        h[key] = v
+        with open(FILENAME, 'w') as fp:
+            json.dump(h, fp)
+        return None
+
+class PypiUpdatesBot:
+    def __init__(self):
+        self._memcache = MyCache()
+        import logging
+        self.log = logging.getLogger('pypi')
 
     @property
     def memcache(self):
         if hasattr(self, '_memcache'):
             return self._memcache
-        self._memcache = pylibmc.Client(
-            [os.getenv('MEMCACHIER_SERVERS')],
-            username=os.getenv('MEMCACHIER_USERNAME'),
-            password=os.getenv('MEMCACHIER_PASSWORD'),
+        self._memcache = '''pylibmc.Client(
+            [os.getenv("MEMCACHIER_SERVERS")],
+            username=os.getenv("MEMCACHIER_USERNAME"),
+            password=os.getenv("MEMCACHIER_PASSWORD"),
             binary=True
-        )
+        )'''
         return self._memcache
 
-    @kuroko.crontab('*/1 * * * *')
     def update_status(self):
         print('Start update status')
         rss = feedparser.parse(RSS_URL)
@@ -93,27 +107,16 @@ class PypiUpdatesBot(kuroko.Bot):
             if int(published) <= int(latest_published):
                 continue
 
-            title = item['title']
-            real_len = len(title) + len(item['link']) + 1
-            if TWEET_MAX_LENGTH < real_len:
-                truncate_len = real_len - TWEET_MAX_LENGTH + len(ELIPSIS)
-                title = title[:-truncate_len] + ELIPSIS
+            # shorten url
+            url = item['link']
 
+            # truncate description text.
+            desc = item['description'].replace('\n', ' ')
+            base = u"{}: {}".format(
+                item['title'],
+                desc
+            )
             # tweet
             message = u'{} {}'.format(title, item['link'])
             self.log.info(message)
-            print(message)
-            try:
-                if is_valid_message(message):
-                    self.tweepy_api.update_status(message)
-
-                # update latest_published cache
-                if tmp_latest < published:
-                    tmp_latest = published
-                    self.memcache.set('latest_published', published)
-
-            except tweepy.TweepError as e:
-                self.log.error(e.message)
-                print(e.message)
-
-        print('End update status')
+            print_(message)

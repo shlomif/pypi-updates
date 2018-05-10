@@ -10,10 +10,11 @@
 
 """
 
-import time
+import os
 from pypi_updates.bot import PypiUpdatesBot
 
 bot = PypiUpdatesBot()
 while True:
     bot.update_status()
-    time.sleep(60)
+    os.system("countdown 60s")
+    # time.sleep(60)

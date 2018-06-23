@@ -16,5 +16,6 @@ from pypi_updates.bot import PypiUpdatesBot
 bot = PypiUpdatesBot()
 while True:
     bot.update_status()
-    os.system("countdown 60s")
+    if os.system("countdown 60s") != 0:
+        break
     # time.sleep(60)

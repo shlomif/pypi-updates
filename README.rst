@@ -1,5 +1,5 @@
 ==========================================
-pypi-updates
+pypi-smoke-tester (work in progress)
 ==========================================
 
 |travis| |coveralls| |requires|
@@ -7,23 +7,19 @@ pypi-updates
 Description
 -----------------------------------------
 
-* Bot for PyPI Recent Updates
-* Bot will check the latest RSS(https://pypi.python.org/pypi?:action=rss) once per minute.
-* https://twitter.com/pypi_updates ... This account has been permanently frozen by Twitter.
-* https://twitter.com/pypi_updates2
+* This aims to be the codebase for a pypi uploads smoke tester similar to
+  https://en.wikipedia.org/wiki/CPAN#Testers for CPAN. It is still work
+  in progress.
+* The code is derived from that of https://github.com/tell-k/pypi-updates so
+  thanks to them.
 
-Required
------------------------------------------
 
-* `Heroku account <https://id.heroku.com/signup>`_
-* `Heroku Toolbelt <https://devcenter.heroku.com/articles/getting-started-with-python#set-up>`_
-* `Twitter account <https://twitter.com/signup>`_
-* `Twitter API tokens <https://apps.twitter.com/>`_
+Plan:
+-----
 
-::
-
- Caution: Access level of your twitter apps must be "Read and write".
-
+* Try to build and test the module inside a pristine forked snapshot of a
+  https://en.wikipedia.org/wiki/Virtual_machine (for security)
+* Decommission the snapshot after capturing the log.
 
 Setup
 -----------------------------------------

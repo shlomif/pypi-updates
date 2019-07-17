@@ -134,7 +134,7 @@ class PypiUpdatesBot:
             try:
                 do_system( cmd = [ 'docker', 'pull', SYS ] );
                 do_system( cmd = [ 'docker', 'run', "-t", "-d", "--name", CONTAINER, SYS, ] );
-                bash_code = "pip3 install --user '{}'".format(item['link'].replace("'", "'\\''"))
+                bash_code = "pip3 install --user '{}'".format(item['title'].replace(" ", "==", 1).replace("'", "'\\''"))
                 output = do_system( cmd = [ 'docker', 'exec', CONTAINER, 'bash', '-c', bash_code, ], capture_output=True);
                 do_system( cmd = [ 'docker', 'stop', CONTAINER, ] );
                 do_system( cmd = [ 'docker', 'rm',   CONTAINER, ] );

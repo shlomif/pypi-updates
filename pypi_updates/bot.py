@@ -138,8 +138,8 @@ class PypiUpdatesBot:
 
             try:
                 do_system( cmd = [ 'docker', 'pull', SYS ] );
-                do_system( cmd = [ 'docker', 'run', "-t", "-d", "--name", CONTAINER, SYS, ] );
-                bash_code = "pip3 install --user '{}'".format(item['title'].replace(" ", "==", 1).replace("'", "'\\''"))
+                do_system( cmd = [ 'docker', 'run', '--memory', '1g', "-t", "-d", "--name", CONTAINER, SYS, ] );
+                bash_code = "set -e -x\nsudo dnf -y install gcc gcc-c++ python3-devel\nexport PATH=\"$HOME/.local/bin:$PATH\"\npip3 install --user '{}'".format(item['title'].replace(" ", "==", 1).replace("'", "'\\''"))
                 output = do_system( cmd = [ 'docker', 'exec', CONTAINER, 'bash', '-c', bash_code, ], capture_output=True);
                 print_("Received {} from docker exec".format(output))
                 _cleanup()

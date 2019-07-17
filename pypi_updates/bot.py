@@ -117,6 +117,6 @@ class PypiUpdatesBot:
                 desc
             )
             # tweet
-            message = u'{} {}'.format(title, item['link'])
+            message = u'{} {}'.format(item['title'], item['link'])
             self.log.info(message)
             print_(message)

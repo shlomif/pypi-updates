@@ -11,9 +11,16 @@
 import feedparser
 # import pylibmc
 import json
+import subprocess
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from six import print_
+
+def do_system(cmd,capture_output=False):
+    print_("Running ({})".format(cmd))
+    ret = subprocess.run(cmd, check=True, capture_output=capture_output)
+    return ret
+
 
 RSS_URL = 'https://pypi.org/rss/updates.xml'
 TWEET_MAX_LENGTH = 130
@@ -98,6 +105,10 @@ class PypiUpdatesBot:
         self.log.info(msg)
         print(msg)
         tmp_latest = latest_published
+
+        SYS = "fedora:31"
+        CONTAINER = 'pypi_smoker'
+
         for item in rss['items']:
             published = parser.parse(
                 item['published']
@@ -120,3 +131,14 @@ class PypiUpdatesBot:
             message = u'{} {}'.format(item['title'], item['link'])
             self.log.info(message)
             print_(message)
+            try:
+                do_system( cmd = [ 'docker', 'pull', SYS ] );
+                do_system( cmd = [ 'docker', 'run', "-t", "-d", "--name", CONTAINER, SYS, ] );
+                bash_code = "pip3 install --user '{}'".format(item['link'].replace("'", "'\\''"))
+                output = do_system( cmd = [ 'docker', 'exec', CONTAINER, 'bash', '-c', bash_code, ], capture_output=True);
+                do_system( cmd = [ 'docker', 'stop', CONTAINER, ] );
+                do_system( cmd = [ 'docker', 'rm',   CONTAINER, ] );
+                print_("Received {} from docker exec".format(output))
+            except subprocess.CalledProcessError as e:
+                print_("failure in {} with stdout={} stderr={} e={}".format(e.cmd, e.stdout, e.stderr, e))
+                raise e

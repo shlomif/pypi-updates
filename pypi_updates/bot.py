@@ -131,14 +131,19 @@ class PypiUpdatesBot:
             message = u'{} {}'.format(item['title'], item['link'])
             self.log.info(message)
             print_(message)
+
+            def _cleanup():
+                do_system( cmd = [ 'docker', 'stop', CONTAINER, ] );
+                do_system( cmd = [ 'docker', 'rm',   CONTAINER, ] );
+
             try:
                 do_system( cmd = [ 'docker', 'pull', SYS ] );
                 do_system( cmd = [ 'docker', 'run', "-t", "-d", "--name", CONTAINER, SYS, ] );
                 bash_code = "pip3 install --user '{}'".format(item['title'].replace(" ", "==", 1).replace("'", "'\\''"))
                 output = do_system( cmd = [ 'docker', 'exec', CONTAINER, 'bash', '-c', bash_code, ], capture_output=True);
-                do_system( cmd = [ 'docker', 'stop', CONTAINER, ] );
-                do_system( cmd = [ 'docker', 'rm',   CONTAINER, ] );
                 print_("Received {} from docker exec".format(output))
+                _cleanup()
             except subprocess.CalledProcessError as e:
                 print_("failure in {} with stdout={} stderr={} e={}".format(e.cmd, e.stdout, e.stderr, e))
+                _cleanup()
                 raise e
